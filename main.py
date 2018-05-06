@@ -1,4 +1,5 @@
 import sys
+import datetime
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5.QtGui import QPixmap, QPalette, QFont
@@ -88,7 +89,6 @@ class Interface(QWidget):
                 msg.setWindowTitle('Ошибка')
                 msg.exec_()
             else:
-
                 self.plot_from_entered(int(self.lineeditp.text()), int(self.lineeditn.text()),
                                        self.lineedit_whole_function.text())
 
@@ -102,22 +102,20 @@ class Interface(QWidget):
                 self.grid.addWidget(self.scrollarea2, 4, 0, 1, 2)
 
     def plot_from_entered(self, p, n, entered_func):
+        a = datetime.datetime.now()
         entered_func = entered_func.lower()
         entered_func = self.replace_in_entered_func(entered_func)
-
         try:
-            x = 0
-            eval(entered_func)
-        except:
+            entered_func_as_lambda = eval('lambda x: ' + entered_func)
+        except SyntaxError:
             msg = QMessageBox()
             msg.setText('Введена неверная функция')
             msg.setWindowTitle('Ошибка')
             msg.exec_()
-            exit()
-
+            return
         p_exp_n = p ** n
         xs = [x/ p_exp_n for x in range(p_exp_n)]
-        fxs = [eval(entered_func) % p_exp_n / p_exp_n for x in range(p_exp_n)]
+        fxs = [entered_func_as_lambda(x) % p_exp_n / p_exp_n for x in range(p_exp_n)]
 
         self.figure.clear()
         ax = self.figure.add_subplot(111)
@@ -126,6 +124,9 @@ class Interface(QWidget):
         ax.set_ylim(0, 1)
         ax.plot(xs, fxs, 'ro', markersize=0.3)
         self.canvas.draw()
+        b = datetime.datetime.now()
+        print(b - a)
+
 
     def replace_in_entered_func(self, text_func):
         repls = {'^':'**','and':'&','or':'|'}
