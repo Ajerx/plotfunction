@@ -102,6 +102,7 @@ class Interface(QWidget):
                 self.grid.addWidget(self.scrollarea2, 4, 0, 1, 2)
 
     def plot_from_entered(self, p, n, entered_func):
+        entered_func = entered_func.lower()
         entered_func = self.replace_in_entered_func(entered_func)
 
         try:
@@ -127,8 +128,8 @@ class Interface(QWidget):
         self.canvas.draw()
 
     def replace_in_entered_func(self, text_func):
-        repls = {'^':'**','AND':'&','OR':'|'}
-        for original_operation, python_operation in repls:
+        repls = {'^':'**','and':'&','or':'|'}
+        for original_operation, python_operation in repls.items():
             text_func = text_func.replace(original_operation, python_operation)
         return text_func
 
