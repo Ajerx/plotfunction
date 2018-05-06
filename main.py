@@ -25,7 +25,6 @@ class Interface(QWidget):
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
-        self.scrollarea1 = QScrollArea()
         self.scrollarea2 = QScrollArea()
 
         self.initui()
@@ -36,14 +35,11 @@ class Interface(QWidget):
         self.lineeditp.setMaximumWidth(30)
         self.visualize_button.setMaximumWidth(100)
 
-
-
-        self.polynomial_panel = QWidget()
-        self.layout = QHBoxLayout()
-        self.layout.addStretch()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.polynomial_panel.setLayout(self.layout)
-
+        self.function_panel = QWidget()
+        self.function_layout = QHBoxLayout()
+        self.function_layout.addStretch()
+        self.function_layout.setContentsMargins(0, 0, 0, 0)
+        self.function_panel.setLayout(self.function_layout)
 
         self.p_power_n_panel = QWidget()
         self.klayout = QHBoxLayout()
@@ -53,8 +49,11 @@ class Interface(QWidget):
 
         self.enter_function_label.setMinimumWidth(100)
 
-        self.layout.addWidget(self.enter_function_label)
         self.setLayout(self.grid)
+        self.grid.setAlignment( Qt.AlignTop)
+
+        self.function_layout.addWidget(self.enter_function_label)
+        self.function_layout.addWidget(self.lineedit_whole_function)
 
         self.klayout.addWidget(self.label_enter_p)
         self.klayout.addWidget(self.lineeditp)
@@ -62,8 +61,7 @@ class Interface(QWidget):
         self.klayout.addWidget(self.label_enter_k)
         self.klayout.addWidget(self.lineeditn)
 
-        self.grid.addWidget(self.polynomial_panel, 0, 0, 1, 1, Qt.AlignLeft | Qt.AlignTop)
-        self.grid.addWidget(self.lineedit_whole_function, 0, 1, 1, 1, Qt.AlignLeft | Qt.AlignTop)
+        self.grid.addWidget(self.function_panel, 0, 0, 1, 1, Qt.AlignLeft | Qt.AlignTop)
         self.grid.addWidget(self.p_power_n_panel, 1, 0, 1, 2, Qt.AlignLeft | Qt.AlignTop)
         self.grid.addWidget(self.visualize_button, 2, 0)
 
@@ -101,7 +99,7 @@ class Interface(QWidget):
                 self.scrollarea2.setWidget(self.canvas)
                 self.grid.addWidget(self.scrollarea2, 4, 0, 1, 2)
 
-    def plot_from_entered(self, p, n, entered_func):
+    def plot_from_entered(self, p, n, entered_func='x + ((x**2) | (-131065))'):
         a = datetime.datetime.now()
         entered_func = entered_func.lower()
         entered_func = self.replace_in_entered_func(entered_func)
@@ -122,11 +120,10 @@ class Interface(QWidget):
         ax.margins(0, 0)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        ax.plot(xs, fxs, 'ro', markersize=0.3)
+        ax.plot(xs, fxs, 'ro', markersize=0.1)
         self.canvas.draw()
         b = datetime.datetime.now()
         print(b - a)
-
 
     def replace_in_entered_func(self, text_func):
         repls = {'^':'**','and':'&','or':'|'}
