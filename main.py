@@ -1,4 +1,5 @@
 import sys
+import os
 import datetime
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -7,6 +8,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout,\
     QPushButton, QApplication, QHBoxLayout,\
     QLineEdit, QMessageBox, QLabel, QComboBox, QScrollArea
+
+
+
 
 class Interface(QWidget):
 
@@ -22,10 +26,10 @@ class Interface(QWidget):
         self.visualize_button = QPushButton('Построить')
         self.labelfirstmethod = QLabel()
         self.labelsecondmethod = QLabel()
-
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.scrollarea2 = QScrollArea()
+
 
         self.initui()
 
@@ -149,7 +153,6 @@ class Interface(QWidget):
             return False
 
 if __name__ == '__main__':
-
     app = QApplication(sys.argv)
     interface = Interface()
     sys.exit(app.exec_())
