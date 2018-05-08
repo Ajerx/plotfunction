@@ -8,7 +8,7 @@ from PyQt5.QtGui import QPixmap, QPalette, QFont
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout,\
     QPushButton, QApplication, QHBoxLayout,\
-    QLineEdit, QMessageBox, QLabel, QComboBox, QScrollArea
+    QLineEdit, QMessageBox, QLabel, QSlider, QScrollArea
 
 
 
@@ -17,6 +17,8 @@ class Interface(QWidget):
 
     def __init__(self):
         super(Interface, self).__init__()
+        self.setMinimumWidth(700)
+        self.setMinimumHeight(610)
         self.grid = QGridLayout()
         self.enter_function_label = QLabel('Введите функцию: y=')
         self.label_enter_k = QLabel('Введите n:')
@@ -30,7 +32,11 @@ class Interface(QWidget):
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.scrollarea2 = QScrollArea()
-
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider_label = QLabel('Выберите размер точки:')
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(10000)
+        self.slider.setValue(5000)
 
         self.initui()
 
@@ -52,10 +58,10 @@ class Interface(QWidget):
         self.klayout.setContentsMargins(0, 0, 0, 0)
         self.p_power_n_panel.setLayout(self.klayout)
 
-        self.enter_function_label.setMinimumWidth(100)
+        self.slider.setMinimumWidth(250)
 
         self.setLayout(self.grid)
-        self.grid.setAlignment( Qt.AlignTop)
+        self.grid.setAlignment(Qt.AlignTop)
 
         self.function_layout.addWidget(self.enter_function_label)
         self.function_layout.addWidget(self.lineedit_whole_function)
@@ -66,10 +72,15 @@ class Interface(QWidget):
         self.klayout.addWidget(self.label_enter_k)
         self.klayout.addWidget(self.lineeditn)
 
-        self.grid.addWidget(self.function_panel, 0, 0, 1, 1, Qt.AlignLeft | Qt.AlignTop)
+        self.grid.addWidget(self.function_panel, 0, 0, 1, 2, Qt.AlignLeft | Qt.AlignTop)
         self.grid.addWidget(self.p_power_n_panel, 1, 0, 1, 2, Qt.AlignLeft | Qt.AlignTop)
-        self.grid.addWidget(self.visualize_button, 2, 0)
+        self.grid.addWidget(self.slider_label, 2, 0, Qt.AlignLeft | Qt.AlignTop)
+        self.grid.addWidget(self.slider, 3, 0, Qt.AlignLeft | Qt.AlignTop)
+        self.grid.addWidget(self.visualize_button, 4, 0)
 
+
+        self.slider.sliderReleased.connect(lambda: self.plot_from_entered(int(self.lineeditp.text()), int(self.lineeditn.text()),
+                                       self.lineedit_whole_function.text()))
         self.visualize_button.clicked.connect(lambda: self.visualize())
 
 
@@ -102,9 +113,11 @@ class Interface(QWidget):
 
                 self.scrollarea2.setBackgroundRole(QPalette.Light)
                 self.scrollarea2.setWidget(self.canvas)
-                self.grid.addWidget(self.scrollarea2, 4, 0, 1, 2)
+                self.grid.addWidget(self.scrollarea2, 5, 0, 1, 2)
 
     def plot_from_entered(self, p, n, entered_func='x + ((x**2) | (-131065))'):
+        p_exp_n = p ** n
+        self.slider.setMaximum(p_exp_n)
         a = datetime.datetime.now()
         entered_func = entered_func.lower()
         entered_func = self.replace_in_entered_func(entered_func)
@@ -116,16 +129,14 @@ class Interface(QWidget):
             msg.setWindowTitle('Ошибка')
             msg.exec_()
             return
-        p_exp_n = p ** n
         xs = [x/ p_exp_n for x in range(p_exp_n)]
         fxs = [entered_func_as_lambda(x) % p_exp_n / p_exp_n for x in range(p_exp_n)]
-
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         ax.margins(0, 0)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        ax.plot(xs, fxs, 'ro', markersize=1)
+        ax.plot(xs, fxs, 'ro', markersize=self.slider.value()/p_exp_n/p)
         self.canvas.draw()
         b = datetime.datetime.now()
         print(b - a)
@@ -154,7 +165,7 @@ class Interface(QWidget):
 
         for rational in rational_numbers:
             prefix, period = rational.split(',')
-            text_func = text_func.replace(rational, self.rational_to_number(prefix[2:], period[:-1], n_power))
+            text_func = text_func.replace(rational, self.rational_to_integer(prefix[2:], period[:-1], n_power))
         return text_func
 
     def divison_expression_to_number(self, expression):
@@ -163,8 +174,7 @@ class Interface(QWidget):
             expression = expression.replace('/(' + expr + ')', '/' + str(eval(expr)))
         return expression
 
-
-    def rational_to_number(self, prefix, period, n):
+    def rational_to_integer(self, prefix, period, n):
         s = prefix
         while len(s) < n:
             s = period + s
