@@ -1,6 +1,7 @@
 import sys
-import os
+import re
 import datetime
+import math
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5.QtGui import QPixmap, QPalette, QFont
@@ -124,16 +125,50 @@ class Interface(QWidget):
         ax.margins(0, 0)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        ax.plot(xs, fxs, 'ro', markersize=0.1)
+        ax.plot(xs, fxs, 'ro', markersize=1)
         self.canvas.draw()
         b = datetime.datetime.now()
         print(b - a)
 
+    def find_divisions(self, text_func):
+        overall_division = 0
+        base = int(self.lineeditp.text())
+        all_divisions = re.findall('/{1}\d+',text_func)
+        for division in all_divisions:
+            overall_division += math.ceil(math.log(int(division[1:]), base))
+        return overall_division
+
     def replace_in_entered_func(self, text_func):
-        repls = {'^':'**','and':'&','or':'|'}
+        repls = {'^': '**','and': '&','or': '|','not': '~'}
+
+        text_func = text_func.replace(' ', '')
+        text_func = self.divison_expression_to_number(text_func)
+
+        n_power = int(self.lineeditn.text())
+        n_power += self.find_divisions(text_func)
+
         for original_operation, python_operation in repls.items():
             text_func = text_func.replace(original_operation, python_operation)
+        rational_numbers = re.findall("r{1}\({1}\d+,{1}\d+\){1}",text_func)
+
+
+        for rational in rational_numbers:
+            prefix, period = rational.split(',')
+            text_func = text_func.replace(rational, self.rational_to_number(prefix[2:], period[:-1], n_power))
         return text_func
+
+    def divison_expression_to_number(self, expression):
+        all_division_expressions_in_brackets = re.findall('/\((.*?)\)', expression)
+        for expr in all_division_expressions_in_brackets:
+            expression = expression.replace('/(' + expr + ')', '/' + str(eval(expr)))
+        return expression
+
+
+    def rational_to_number(self, prefix, period, n):
+        s = prefix
+        while len(s) < n:
+            s = period + s
+        return str(int(s[-n:], int(self.lineeditp.text())))
 
     def is_prime(self, n):
         if n == 2:
