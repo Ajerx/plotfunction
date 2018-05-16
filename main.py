@@ -8,7 +8,7 @@ from PyQt5.QtGui import QPixmap, QPalette, QFont
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout,\
     QPushButton, QApplication, QHBoxLayout,\
-    QLineEdit, QMessageBox, QLabel, QSlider, QScrollArea
+    QLineEdit, QMessageBox, QLabel, QSlider, QScrollArea, QFileDialog
 
 
 
@@ -27,12 +27,15 @@ class Interface(QWidget):
         self.lineeditn = QLineEdit()
         self.lineeditp = QLineEdit()
         self.visualize_button = QPushButton('Построить')
+        self.save_button = QPushButton('Сохранить')
+        self.save_button.setDisabled(True)
         self.labelfirstmethod = QLabel()
         self.labelsecondmethod = QLabel()
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.scrollarea2 = QScrollArea()
         self.slider = QSlider(Qt.Horizontal)
+        self.slider.setDisabled(True)
         self.slider_label = QLabel('Выберите размер точки:')
         self.slider.setMinimum(0)
         self.slider.setMaximum(10000)
@@ -45,6 +48,7 @@ class Interface(QWidget):
         self.lineeditn.setMaximumWidth(30)
         self.lineeditp.setMaximumWidth(30)
         self.visualize_button.setMaximumWidth(100)
+        self.save_button.setMaximumWidth(100)
 
         self.function_panel = QWidget()
         self.function_layout = QHBoxLayout()
@@ -58,6 +62,13 @@ class Interface(QWidget):
         self.klayout.setContentsMargins(0, 0, 0, 0)
         self.p_power_n_panel.setLayout(self.klayout)
 
+        self.buttons_panel = QWidget()
+        self.buttons_layout = QHBoxLayout()
+        self.buttons_layout.addStretch()
+        self.buttons_layout.setSpacing(100)
+        self.buttons_layout.setContentsMargins(0, 0, 0, 0)
+        self.buttons_panel.setLayout(self.buttons_layout)
+
         self.slider.setMinimumWidth(250)
 
         self.setLayout(self.grid)
@@ -65,6 +76,9 @@ class Interface(QWidget):
 
         self.function_layout.addWidget(self.enter_function_label)
         self.function_layout.addWidget(self.lineedit_whole_function)
+
+        self.buttons_layout.addWidget(self.visualize_button)
+        self.buttons_layout.addWidget(self.save_button)
 
         self.klayout.addWidget(self.label_enter_p)
         self.klayout.addWidget(self.lineeditp)
@@ -76,12 +90,13 @@ class Interface(QWidget):
         self.grid.addWidget(self.p_power_n_panel, 1, 0, 1, 2, Qt.AlignLeft | Qt.AlignTop)
         self.grid.addWidget(self.slider_label, 2, 0, Qt.AlignLeft | Qt.AlignTop)
         self.grid.addWidget(self.slider, 3, 0, Qt.AlignLeft | Qt.AlignTop)
-        self.grid.addWidget(self.visualize_button, 4, 0)
+        self.grid.addWidget(self.buttons_panel, 4, 0, Qt.AlignLeft | Qt.AlignTop)
 
 
         self.slider.sliderReleased.connect(lambda: self.plot_from_entered(int(self.lineeditp.text()), int(self.lineeditn.text()),
                                        self.lineedit_whole_function.text()))
         self.visualize_button.clicked.connect(lambda: self.visualize())
+        self.save_button.clicked.connect(lambda: self.save_figure())
 
 
         self.listforlabels = []
@@ -117,6 +132,8 @@ class Interface(QWidget):
 
     def plot_from_entered(self, p, n, entered_func='x + ((x**2) | (-131065))'):
         p_exp_n = p ** n
+        self.slider.setDisabled(False)
+        self.save_button.setDisabled(False)
         self.slider.setMaximum(p_exp_n)
         a = datetime.datetime.now()
         entered_func = entered_func.lower()
@@ -140,6 +157,10 @@ class Interface(QWidget):
         self.canvas.draw()
         b = datetime.datetime.now()
         print(b - a)
+
+    def save_figure(self):
+        filename = QFileDialog.getSaveFileName(self, 'Please choose your File.', "new.png", "Images (*.png)")
+        self.figure.savefig(filename[0])
 
     def find_divisions(self, text_func):
         overall_division = 0
