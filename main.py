@@ -4,13 +4,11 @@ import datetime
 import math
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from PyQt5.QtGui import QPixmap, QPalette, QFont
+from PyQt5.QtGui import QPalette
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout,\
     QPushButton, QApplication, QHBoxLayout,\
     QLineEdit, QMessageBox, QLabel, QSlider, QScrollArea, QFileDialog
-
-
 
 
 class Interface(QWidget):
@@ -33,13 +31,19 @@ class Interface(QWidget):
         self.labelsecondmethod = QLabel()
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
-        self.scrollarea2 = QScrollArea()
+        self.scrollarea = QScrollArea()
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setDisabled(True)
         self.slider_label = QLabel('Выберите размер точки:')
         self.slider.setMinimum(0)
         self.slider.setMaximum(10000)
         self.slider.setValue(5000)
+        self.function_panel = QWidget()
+        self.function_layout = QHBoxLayout()
+        self.p_power_n_panel = QWidget()
+        self.klayout = QHBoxLayout()
+        self.buttons_panel = QWidget()
+        self.buttons_layout = QHBoxLayout()
 
         self.initui()
 
@@ -50,20 +54,14 @@ class Interface(QWidget):
         self.visualize_button.setMaximumWidth(100)
         self.save_button.setMaximumWidth(100)
 
-        self.function_panel = QWidget()
-        self.function_layout = QHBoxLayout()
         self.function_layout.addStretch()
         self.function_layout.setContentsMargins(0, 0, 0, 0)
         self.function_panel.setLayout(self.function_layout)
 
-        self.p_power_n_panel = QWidget()
-        self.klayout = QHBoxLayout()
         self.klayout.addStretch()
         self.klayout.setContentsMargins(0, 0, 0, 0)
         self.p_power_n_panel.setLayout(self.klayout)
 
-        self.buttons_panel = QWidget()
-        self.buttons_layout = QHBoxLayout()
         self.buttons_layout.addStretch()
         self.buttons_layout.setSpacing(100)
         self.buttons_layout.setContentsMargins(0, 0, 0, 0)
@@ -92,20 +90,16 @@ class Interface(QWidget):
         self.grid.addWidget(self.slider, 3, 0, Qt.AlignLeft | Qt.AlignTop)
         self.grid.addWidget(self.buttons_panel, 4, 0, Qt.AlignLeft | Qt.AlignTop)
 
-
         self.slider.sliderReleased.connect(lambda: self.plot_from_entered(int(self.lineeditp.text()), int(self.lineeditn.text()),
                                        self.lineedit_whole_function.text()))
         self.visualize_button.clicked.connect(lambda: self.visualize())
         self.save_button.clicked.connect(lambda: self.save_figure())
 
-
-        self.listforlabels = []
-        self.listforlinedit = []
         self.show()
 
     def visualize(self):
-        self.scrollarea2.deleteLater()
-        if not self.RepresentsInt(self.lineeditn.text()) or int(self.lineeditn.text()) <= 0:
+        self.scrollarea.deleteLater()
+        if not self.represents_int(self.lineeditn.text()) or int(self.lineeditn.text()) <= 0:
             msg = QMessageBox()
             msg.setText('Введите n; n >= 1')
             msg.setWindowTitle('Ошибка')
@@ -121,14 +115,14 @@ class Interface(QWidget):
                 self.plot_from_entered(int(self.lineeditp.text()), int(self.lineeditn.text()),
                                        self.lineedit_whole_function.text())
 
-                self.scrollarea2 = QScrollArea()
+                self.scrollarea = QScrollArea()
 
-                self.scrollarea2.setMinimumWidth(400)
-                self.scrollarea2.setMinimumHeight(400)
+                self.scrollarea.setMinimumWidth(400)
+                self.scrollarea.setMinimumHeight(400)
 
-                self.scrollarea2.setBackgroundRole(QPalette.Light)
-                self.scrollarea2.setWidget(self.canvas)
-                self.grid.addWidget(self.scrollarea2, 5, 0, 1, 2)
+                self.scrollarea.setBackgroundRole(QPalette.Light)
+                self.scrollarea.setWidget(self.canvas)
+                self.grid.addWidget(self.scrollarea, 5, 0, 1, 2)
 
     def plot_from_entered(self, p, n, entered_func='x + ((x**2) | (-131065))'):
         p_exp_n = p ** n
@@ -159,8 +153,12 @@ class Interface(QWidget):
         print(b - a)
 
     def save_figure(self):
-        filename = QFileDialog.getSaveFileName(self, 'Please choose your File.', "new.png", "Images (*.png)")
-        self.figure.savefig(filename[0])
+        filename = QFileDialog.getSaveFileName(None, 'Please choose your File.',
+                                               self.lineedit_whole_function.text()
+                                               + '; p = '+ self.lineeditp.text() + '; n = ' + self.lineeditn.text(),
+                                               "Images (*.png)")
+        if filename[0]:
+            self.figure.savefig(filename[0])
 
     def find_divisions(self, text_func):
         overall_division = 0
@@ -182,7 +180,6 @@ class Interface(QWidget):
         for original_operation, python_operation in repls.items():
             text_func = text_func.replace(original_operation, python_operation)
         rational_numbers = re.findall("r{1}\({1}\d+,{1}\d+\){1}",text_func)
-
 
         for rational in rational_numbers:
             prefix, period = rational.split(',')
@@ -211,12 +208,13 @@ class Interface(QWidget):
                 return False
         return True
 
-    def RepresentsInt(self, s):
+    def represents_int(self, s):
         try:
             int(s)
             return True
         except ValueError:
             return False
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
