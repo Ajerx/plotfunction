@@ -169,16 +169,15 @@ class Interface(QWidget):
         return overall_division
 
     def replace_in_entered_func(self, text_func):
-        repls = {'^': '**', 'and': '&', 'or': '|', 'not': '~'}
-        text_func = text_func.replace(' ', '')
+        repls = [['^', '**'], ['xor', '^'], ['and', '&'], ['or', '|'], ['not', '~']]
+
         text_func = self.divison_expression_to_number(text_func)
 
         n_power = int(self.lineeditn.text())
         n_power += self.find_divisions(text_func)
 
-        text_func = text_func.replace('xor', '^')
-        for original_operation, python_operation in repls.items():
-            text_func = text_func.replace(original_operation, python_operation)
+        for operation in repls:
+            text_func = text_func.replace(operation[0], operation[1])
 
         rational_numbers = re.findall("r{1}\({1}\d+,{1}\d+\){1}",text_func)
 
