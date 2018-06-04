@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QWidget, QGridLayout,\
 class Interface(QWidget):
 
     def __init__(self):
-        super(Interface, self).__init__()
+        super().__init__()
         self.setMinimumWidth(700)
         self.setMinimumHeight(610)
         self.grid = QGridLayout()
