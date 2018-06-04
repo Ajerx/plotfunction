@@ -18,7 +18,7 @@ class Interface(QWidget):
         self.setMinimumWidth(700)
         self.setMinimumHeight(610)
         self.grid = QGridLayout()
-        self.enter_function_label = QLabel('Введите функцию: y=')
+        self.enter_function_label = QLabel('Введите функцию: f(x) =')
         self.label_enter_k = QLabel('Введите n:')
         self.label_enter_p = QLabel('Введите p:')
         self.lineedit_whole_function = QLineEdit()
@@ -90,7 +90,9 @@ class Interface(QWidget):
         self.grid.addWidget(self.slider, 3, 0, Qt.AlignLeft | Qt.AlignTop)
         self.grid.addWidget(self.buttons_panel, 4, 0, Qt.AlignLeft | Qt.AlignTop)
 
-        self.slider.sliderReleased.connect(lambda: self.plot_from_entered(int(self.lineeditp.text()), int(self.lineeditn.text()),
+        self.slider.sliderReleased.connect(lambda:
+                                       self.plot_from_entered(int(self.lineeditp.text()),
+                                                              int(self.lineeditn.text()),
                                        self.lineedit_whole_function.text()))
         self.visualize_button.clicked.connect(lambda: self.visualize())
         self.save_button.clicked.connect(lambda: self.save_figure())
@@ -155,7 +157,8 @@ class Interface(QWidget):
     def save_figure(self):
         filename = QFileDialog.getSaveFileName(None, 'Please choose your File.',
                                                self.lineedit_whole_function.text()
-                                               + '; p = '+ self.lineeditp.text() + '; n = ' + self.lineeditn.text(),
+                                               + '; p = '+ self.lineeditp.text() +
+                                               '; n = ' + self.lineeditn.text(),
                                                "Images (*.png)")
         if filename[0]:
             self.figure.savefig(filename[0])
@@ -183,7 +186,8 @@ class Interface(QWidget):
 
         for rational in rational_numbers:
             prefix, period = rational.split(',')
-            text_func = text_func.replace(rational, self.rational_to_integer(prefix[2:], period[:-1], n_power))
+            text_func = text_func.replace(rational,
+                                          self.rational_to_integer(prefix[2:], period[:-1], n_power))
         return text_func
 
     def divison_expression_to_number(self, expression):
