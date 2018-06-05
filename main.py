@@ -19,7 +19,7 @@ class Interface(QWidget):
         self.setMinimumHeight(610)
         self.grid = QGridLayout()
         self.enter_function_label = QLabel('Введите функцию: f(x) =')
-        self.label_enter_k = QLabel('Введите n:')
+        self.label_enter_n = QLabel('Введите n:')
         self.label_enter_p = QLabel('Введите p:')
         self.lineedit_whole_function = QLineEdit()
         self.lineeditn = QLineEdit()
@@ -81,7 +81,7 @@ class Interface(QWidget):
         self.klayout.addWidget(self.label_enter_p)
         self.klayout.addWidget(self.lineeditp)
 
-        self.klayout.addWidget(self.label_enter_k)
+        self.klayout.addWidget(self.label_enter_n)
         self.klayout.addWidget(self.lineeditn)
 
         self.grid.addWidget(self.function_panel, 0, 0, 1, 2, Qt.AlignLeft | Qt.AlignTop)
