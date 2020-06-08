@@ -2,12 +2,14 @@ import sys
 import re
 import datetime
 import math
+import numpy as np
+import os
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5.QtGui import QPalette
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QGridLayout,\
-    QPushButton, QApplication, QHBoxLayout,\
+from PyQt5.QtWidgets import QWidget, QGridLayout, \
+    QPushButton, QApplication, QHBoxLayout, \
     QLineEdit, QMessageBox, QLabel, QSlider, QScrollArea, QFileDialog
 
 
@@ -91,13 +93,13 @@ class Interface(QWidget):
         self.grid.addWidget(self.buttons_panel, 4, 0, Qt.AlignLeft | Qt.AlignTop)
 
         self.slider.sliderReleased.connect(lambda:
-                                       self.plot_from_entered(int(self.lineeditp.text()),
-                                                              int(self.lineeditn.text()),
-                                       self.lineedit_whole_function.text()))
+                                           self.plot_from_entered(int(self.lineeditp.text()),
+                                                                  int(self.lineeditn.text()),
+                                                                  self.lineedit_whole_function.text()))
         self.visualize_button.clicked.connect(lambda: self.visualize())
         self.save_button.clicked.connect(lambda: self.save_figure())
 
-        self.show()
+        # self.show()
 
     def visualize(self):
         if not self.represents_int(self.lineeditn.text()) or int(self.lineeditn.text()) <= 0:
@@ -130,10 +132,9 @@ class Interface(QWidget):
         p_exp_n = p ** n
         self.slider.setDisabled(False)
         self.save_button.setDisabled(False)
-        self.slider.setMaximum(p_exp_n)
         a = datetime.datetime.now()
         entered_func = entered_func.lower()
-        entered_func = self.replace_in_entered_func(entered_func)
+        entered_func = self.replace_in_entered_func(p, n, entered_func)
         try:
             entered_func_as_lambda = eval('lambda x: ' + entered_func)
         except SyntaxError:
@@ -142,52 +143,55 @@ class Interface(QWidget):
             msg.setWindowTitle('Ошибка')
             msg.exec_()
             return
-        xs = [x/ p_exp_n for x in range(p_exp_n)]
-        fxs = [entered_func_as_lambda(x) % p_exp_n / p_exp_n for x in range(p_exp_n)]
+        xs = [x / p_exp_n for x in np.arange(0, p_exp_n, 1)]
+        fxs = [entered_func_as_lambda(x) % p_exp_n / p_exp_n for x in np.arange(0, p_exp_n, 1)]
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         ax.margins(0, 0)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        ax.plot(xs, fxs, 'ro', markersize=self.slider.value()/p_exp_n/p)
+        ax.plot(xs, fxs, 'bo', markersize=self.slider.value() / (5000 + p_exp_n/4))
         self.canvas.draw()
         b = datetime.datetime.now()
         print(b - a)
 
+    def save_figure_without_dialog(self, save_path):
+        self.figure.savefig(save_path)
+
     def save_figure(self):
         filename = QFileDialog.getSaveFileName(None, 'Please choose your File.',
                                                self.lineedit_whole_function.text()
-                                               + '; p = '+ self.lineeditp.text() +
+                                               + '; p = ' + self.lineeditp.text() +
                                                '; n = ' + self.lineeditn.text(),
                                                "Images (*.png)")
         if filename[0]:
             self.figure.savefig(filename[0])
 
-    def find_divisions(self, text_func):
+    def find_divisions(self, text_func, p):
         overall_division = 0
-        base = int(self.lineeditp.text())
-        all_divisions = re.findall('/{1}\d+',text_func)
+        base = p #int(self.lineeditp.text())
+        all_divisions = re.findall('/{1}\d+', text_func)
         for division in all_divisions:
             overall_division += math.ceil(math.log(int(division[1:]), base))
         return overall_division
 
-    def replace_in_entered_func(self, text_func):
+    def replace_in_entered_func(self, p, n, text_func):
         repls = [['^', '**'], ['xor', '^'], ['and', '&'], ['or', '|'], ['not', '~']]
 
         text_func = self.divison_expression_to_number(text_func)
 
-        n_power = int(self.lineeditn.text())
-        n_power += self.find_divisions(text_func)
+        n_power = n
+        n_power += self.find_divisions(text_func, p)
 
         for operation in repls:
             text_func = text_func.replace(operation[0], operation[1])
 
-        rational_numbers = re.findall("r{1}\({1}\d+,{1}\d+\){1}",text_func)
+        rational_numbers = re.findall("r{1}\({1}\d+,{1}\d+\){1}", text_func)
 
         for rational in rational_numbers:
             prefix, period = rational.split(',')
             text_func = text_func.replace(rational,
-                                          self.rational_to_integer(prefix[2:], period[:-1], n_power))
+                                          self.rational_to_integer(prefix[2:], period[:-1], n_power, p))
         return text_func
 
     def divison_expression_to_number(self, expression):
@@ -196,11 +200,11 @@ class Interface(QWidget):
             expression = expression.replace('/(' + expr + ')', '/' + str(eval(expr)))
         return expression
 
-    def rational_to_integer(self, prefix, period, n):
+    def rational_to_integer(self, prefix, period, n, p):
         s = prefix
         while len(s) < n:
             s = period + s
-        return str(int(s[-n:], int(self.lineeditp.text())))
+        return str(int(s[-n:], p))
 
     def is_prime(self, n):
         if n == 2:
@@ -219,8 +223,90 @@ class Interface(QWidget):
         except ValueError:
             return False
 
+    def check_transitivity(self, text_func):
+
+        entered_func_as_lambda = eval('lambda x: (' + text_func + ') % 8')
+
+        l = list(range(0, 8))
+
+        result = entered_func_as_lambda(l[0])
+        while len(l) > 0:
+            if result in l:
+                l.remove(result)
+            else:
+                return False
+            result = entered_func_as_lambda(result)
+        return True
+
+
+    def draw_quadratic_polynomials_plots(self, min_a, max_a, min_b, max_b, min_c, max_c, ns):
+        """
+        Draw plots for quadratic polynomials. Draw only for ergodic ones. ns is a list of different n.
+        """
+
+        latex = ""
+
+        p = 2
+        ergodic = 0
+        non_ergodic = 0
+        for a in range(min_a, max_a):
+            if a == 0:
+                continue
+            for b in range(min_b, max_b):
+                for c in range(min_c, max_c):
+                    text_func = "{a}*x^2 + {b}*x + {c}".format(a=a if a >= 0 else f"({a})",
+                                                               b=b if b >= 0 else f"({b})",
+                                                               c=c if c >= 0 else f"({c})")
+
+                    replaced_func = self.replace_in_entered_func(p, ns[0], text_func)
+
+                    transitivity = self.check_transitivity(replaced_func)
+                    if transitivity:
+                        ergodic += 1
+                        latex += f"""
+                        \\begin{{figure}}[H]
+                            \centering
+                            \caption{{$f(x) = {text_func.replace("*", "")}$}}
+                        """
+
+
+                        for n in ns:
+                            self.plot_from_entered(p, n, entered_func=replaced_func)
+                            self.save_figure_without_dialog(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                                         "plots",
+                                                                         text_func.replace("*", "") +
+                                                                         f", p={p}, n={n}.png"))
+                            latex += f"""
+                                \subfigure[$p=2, n={n}$]{{\includegraphics[width=0.32\\textwidth]{{{text_func.replace("*", "")}, p=2, n={n}.png}}}}"""
+
+                        latex += """
+                        \end{figure}
+
+                        \par\\noindent\\rule{\\textwidth}{0.4pt}
+
+                        """
+
+                    else:
+                        non_ergodic += 1
+                    print("Original Function: {o}. Replaced Function: {f}. Transitivity: {t}".format(o=text_func,
+                                                                                                     f=replaced_func,
+                                                                                                     t=transitivity))
+
+        print(f"Ergodic: {ergodic}")
+        print(f"Non-Ergodic: {non_ergodic}")
+
+        with open('latex.txt', 'w') as latex_file:
+            latex_file.write(latex)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     interface = Interface()
-    sys.exit(app.exec_())
+    # sys.exit(app.exec_())
+
+    interface.draw_quadratic_polynomials_plots(min_a=-10,
+                                               max_a=11,
+                                               min_b=-10,
+                                               max_b=11,
+                                               min_c=-10,
+                                               max_c=11,
+                                               ns=[13, 16, 19])
